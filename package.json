@@ -1,0 +1,30 @@
+{
+  "name": "sequelize-session-store",
+  "version": "0.0.0",
+  "description": "Sequelize session store for Express sessions",
+  "main": "index.js",
+  "scripts": {
+    "pretest": "./scripts/pretest.sh",
+    "test": "./scripts/test.sh",
+    "posttest": "./scripts/posttest.sh",
+		"prepublish": "./scripts/pretest.sh"
+  },
+  "engines": {
+    "node": ">=4.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jwoos/javascript_sequelize-session-store.git"
+  },
+  "keywords": [
+    "express",
+    "sequelize",
+    "session"
+  ],
+  "author": "Jun Woo Shin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jwoos/javascript_sequelize-session-store/issues"
+  },
+  "homepage": "https://github.com/jwoos/javascript_sequelize-session-store#readme"
+}
