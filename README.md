@@ -19,7 +19,7 @@ The constructor takes an argument object:
 1. `sequelize`: This is the sequelize instance
 	- Refer to the Sequelize documentation for configuring the instance
 2. `model`: A Sequelize model
-	- You can define the model yourself with various fields but the following are REQUIRED to be in the table: `sid`, `data`, `expire`
+	- You can define the model yourself with various fields but the following are REQUIRED to be in the table: `sid`, `sess`, `expire`
 		-`sid`: varchar, not null, primary key
 		-`sess`: json/varchar/text, not null
 		-`expire`: timestamp, not null
