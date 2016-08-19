@@ -24,6 +24,8 @@ The constructor takes an argument object:
 		-`sess`: json/varchar/text, not null
 		-`expire`: timestamp, not null
 	- Specifying a model allows relational mappings to other databases and inclusion of other fields
+3. `extras`: A function to add data for columns that are not required
+	- the function will take an argument of an empty object, add your data with the column name being the key and the value being the value
 
 If a sequelize instance is not passed in, an error will be thrown. If you do not pass it a model, one will be created and available for you to access using the SequelizeSessionStore instance.
 ```sql
@@ -51,7 +53,10 @@ let sessionConfig = {
 	// express session options here
 	store: SequelizeSessionStore({
 		model: aSequelizeModel,
-		db: sequelize
+		db: sequelize,
+		extras: (data) => {
+			data.customColumn = 'someData';
+		}
 	});
 };
 
