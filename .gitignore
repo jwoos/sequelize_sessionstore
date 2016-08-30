@@ -37,5 +37,4 @@ ifroot
 *.swp
 *.swo
 
-# zork save files
-*.sav
+dist/
