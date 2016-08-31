@@ -16,6 +16,6 @@ describe('Loader', () => {
 		};
 		let store = loader(mockSession);
 
-		expect(store.__proto__).toEqual(mockSession.Store);
+		expect(Object.getPrototypeOf(store)).toEqual(mockSession.Store);
 	});
 });
