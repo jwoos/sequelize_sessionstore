@@ -5,16 +5,10 @@ const path = require('path');
 const bluebird = require('bluebird');
 
 const SequelizeSessionStore = require(path.join(__dirname, '../../dist/index'));
+const errors = require(path.join(__dirname, '../../dist/errors'));
 
 describe('Class: SequelizeSessionStore', () => {
 	let mockSession, store, instance;
-
-	beforeAll(() => {
-		// this handler is local meaning that it must be defined here
-		bluebird.onPossiblyUnhandledRejection((err) => {
-			throw err;
-		});
-	});
 
 	beforeEach(() => {
 		mockSession = {
@@ -39,20 +33,13 @@ describe('Class: SequelizeSessionStore', () => {
 			expect(Object.getPrototypeOf(store)).toEqual(mockSession.Store);
 		});
 
-		it('should set bluebird unhandled rejection option', () => {
-			spyOn(bluebird, 'onPossiblyUnhandledRejection').and.callThrough();
-			instance = new store();
-
-			expect(bluebird.onPossiblyUnhandledRejection).toHaveBeenCalled();
-		});
-
 		it('should call validateConfig', () => {
 			instance = new store();
 
 			expect(store.validateConfig).toHaveBeenCalled();
 		});
 
-		it('should set options', () => {
+		it('should set options', (done) => {
 			let options = {
 				sequelize: () => {},
 				model: {},
@@ -67,12 +54,16 @@ describe('Class: SequelizeSessionStore', () => {
 			};
 
 			instance = new store(options);
+			mockDeferred.resolve();
 
-			expect(instance._sequelize).toBe(options.sequelize);
-			expect(instance._model).toBe(options.model);
-			expect(instance._extras).toBe(options.extras);
-			expect(instance._expirationInterval).toEqual(1000);
-			expect(instance._sessionLife).toEqual(2500);
+			mockDeferred.promise.then(() => {
+				expect(instance._sequelize).toBe(options.sequelize);
+				expect(instance._model).toBe(options.model);
+				expect(instance._extras).toBe(options.extras);
+				expect(instance._expirationInterval).toEqual(1000);
+				expect(instance._sessionLife).toEqual(2500);
+				done();
+			});
 		});
 
 		it('should use defaults', () => {
@@ -82,37 +73,51 @@ describe('Class: SequelizeSessionStore', () => {
 			expect(instance._sessionLife).toEqual(1000 * 60 * 60 * 24);
 		});
 
-		it('should create a model if one is not given', () => {
+		xit('should create a model if one is not given', (done) => {
 			let mockModel = {};
 			instance = new store();
 			mockDeferred.resolve(mockModel);
 
-			mockDeferred.promise.then(() => {
+			mockDeferred.promise.finally(() => {
 				expect(store.prototype.createModel).toHaveBeenCalled();
 				expect(instance._model).toBe(mockModel);
+				done();
 			});
 		});
 
-		// TODO figure out why it's not throwing error outright
-		xit('should throw an error if model could not be created', () => {
+		xit('should call startCleanJob', (done) => {
+			instance = new store();
+			mockDeferred.resolve({});
+
+			mockDeferred.promise.finally(() => {
+				expect(store.prototype.startCleanJob).toHaveBeenCalled();
+				done();
+			});
+		});
+
+		it('should reject an error if model could not be created', (done) => {
+			spyOn(errors, 'SequelizeSessionStoreError');
 			instance = new store();
 			mockDeferred.reject();
+
+			mockDeferred.promise.finally(() => {
+				expect(errors.SequelizeSessionStoreError).toHaveBeenCalledWith('Could not initialize a Session model');
+				done();
+			});
 		});
 
-		it('should call startCleanJob', () => {
-			instance = new store();
-
-			expect(store.prototype.startCleanJob).toHaveBeenCalled();
-		});
-
-		it('should not call startCleanJob if no interval', () => {
+		it('should not call startCleanJob if no interval', (done) => {
 			instance = new store({
 				expiration: {
 					interval: 0
 				}
 			});
+			mockDeferred.resolve();
 
-			expect(store.prototype.startCleanJob).not.toHaveBeenCalled();
+			mockDeferred.promise.finally(() => {
+				expect(store.prototype.startCleanJob).not.toHaveBeenCalled();
+				done();
+			});
 		});
 	});
 
@@ -138,27 +143,35 @@ describe('Class: SequelizeSessionStore', () => {
 		});
 
 		it('should authenticate', () => {
-			mockDeferred.promise.then(() => {
+			mockDeferred.promise.finally(() => {
 
+			});
+		});
+
+		it('should throw an error if unable to authenticate', (done) => {
+			spyOn(errors, 'ValidationError');
+			mockDeferred.reject('REJECTION');
+
+			mockDeferred.promise.catch(() => {
+				expect(errors.ValidationError).toHaveBeenCalledWith('Unable to connect to database: REJECTION');
+				done();
 			});
 		});
 
 		it('should throw error if any required fields are missing', () => {
-			mockDeferred.promise.then(() => {
+			mockDeferred.promise.finally(() => {
 			});
 		});
 
 		it('should throw error if wrong primary key', () => {
-			mockDeferred.promise.then(() => {
+			mockDeferred.promise.finally(() => {
 			});
 		});
 
 		it('should throw error if wrong type for expiration', () => {
-			mockDeferred.promise.then(() => {
+			mockDeferred.promise.finally(() => {
 			});
 		});
-
-		xit('should throw an error if unable to authenticate', () => {});
 	});
 
 	describe('Method: createModel', () => {});
