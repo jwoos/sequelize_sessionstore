@@ -544,9 +544,208 @@ describe('Class: SequelizeSessionStore', () => {
 		});
 	});
 
-	describe('Method: set', () => {});
+	describe('Method: set', () => {
+		let mockDeferred, mockModel, mockExtras, mockSession, cb;
 
-	describe('Method: touch', () => {});
+		beforeEach(() => {
+			mockDeferred = bluebird.defer();
+
+			mockSession = {
+				cookie: {
+					expire: ''
+				}
+			};
+
+			mockModel = {
+				upsert: () => {
+					return mockDeferred.promise;
+				},
+				rawAttributes: {
+					sid: '',
+					session: '',
+					expire: '',
+					prop1: '',
+					prop2: ''
+				}
+			};
+
+			cb = jasmine.createSpy('cb');
+			mockExtras = jasmine.createSpy('extras').and.callFake((obj) => {
+				obj.prop1 = '';
+				obj.prop2 = '';
+			});
+
+			spyOn(store, 'validateConfig');
+			spyOn(mockModel, 'upsert').and.callThrough();
+
+			instance = new store({
+				model: mockModel,
+				sequelize: {},
+				expiration: {
+					interval: 0
+				},
+				extras: mockExtras
+			});
+		});
+
+		it('should call extras', (done) => {
+			instance._extras = jasmine.createSpy('temp');
+			mockDeferred.resolve();
+
+			instance.ready.finally(() => {
+				return instance.set('SID', mockSession, cb);
+			}).catch(() => {
+				expect(instance._extras).toHaveBeenCalledWith({});
+				done();
+			});
+		});
+
+		it('should throw error if missing fields', (done) => {
+			instance.ready.finally(() => {
+				expect(() => {
+					instance._extras = () => {};
+					instance.set('SID', mockSession, cb);
+				}).toThrowError(Error, 'The following fields are required: prop1, prop2');
+				done();
+			});
+		});
+
+		it('should call upsert', (done) => {
+			mockDeferred.resolve();
+
+			instance.ready.finally(() => {
+				return instance.set('SID', mockSession, cb);
+			}).finally(() => {
+				expect(mockModel.upsert).toHaveBeenCalledWith({
+					sid: 'SID',
+					session: {
+						cookie: {
+							expire: ''
+						}
+					},
+					expire: '',
+					prop1: '',
+					prop2: ''
+				});
+				done();
+			});
+		});
+
+		it('should call cb with null', (done) => {
+			mockDeferred.resolve();
+
+			instance.ready.finally(() => {
+				return instance.set('SID', mockSession, cb);
+			}).finally(() => {
+				expect(cb).toHaveBeenCalledWith(null);
+				done();
+			});
+		});
+
+		it('should call cb with error on rejection', (done) => {
+			mockDeferred.reject({error: true});
+
+			instance.ready.finally(() => {
+				return instance.set('SID', mockSession, cb);
+			}).finally(() => {
+				expect(cb).toHaveBeenCalledWith({error: true});
+				done();
+			});
+		});
+	});
+
+	describe('Method: touch', () => {
+		let mockDeferred, mockModel, cb;
+
+		beforeEach(() => {
+			mockDeferred = bluebird.defer();
+
+			mockModel = {
+				update: () => {
+					return mockDeferred.promise;
+				}
+			};
+
+			cb = jasmine.createSpy('cb');
+
+			spyOn(store, 'validateConfig');
+			spyOn(mockModel, 'update').and.callThrough();
+
+			instance = new store({
+				model: mockModel,
+				sequelize: {},
+				expiration: {
+					interval: 0
+				}
+			});
+
+			spyOn(Date, 'now').and.returnValue(1450000000000);
+		});
+
+		it('should use sessionLife', (done) => {
+			mockDeferred.resolve();
+
+			instance.ready.finally(() => {
+				instance._sessionLife = 1000;
+
+				return instance.touch('SID', {}, cb);
+			}).finally(() => {
+				expect(mockModel.update).toHaveBeenCalledWith({expire: new Date(1450000001000)});
+				done();
+			});
+		});
+
+		it('should use sessionLife', (done) => {
+			mockDeferred.resolve();
+
+			instance.ready.finally(() => {
+				instance._sessionLife = null;
+
+				return instance.touch('SID', {
+					cookie: {
+						maxAge: 1000
+					}
+				}, cb);
+			}).finally(() => {
+				expect(mockModel.update).toHaveBeenCalledWith({expire: new Date(1450000001000)});
+				done();
+			});
+		});
+
+		it('should call cb with null on resolve', (done) => {
+			mockDeferred.resolve();
+
+			instance.ready.finally(() => {
+				instance._sessionLife = null;
+
+				return instance.touch('SID', {
+					cookie: {
+						maxAge: 1000
+					}
+				}, cb);
+			}).finally(() => {
+				expect(cb).toHaveBeenCalledWith(null);
+				done();
+			});
+		});
+
+		it('should call cb with error on rejection', (done) => {
+			mockDeferred.reject({error: true});
+
+			instance.ready.finally(() => {
+				instance._sessionLife = null;
+
+				return instance.touch('SID', {
+					cookie: {
+						maxAge: 1000
+					}
+				}, cb);
+			}).finally(() => {
+				expect(cb).toHaveBeenCalledWith({error: true});
+				done();
+			});
+		});
+	});
 
 	describe('Method: cleanExpired', () => {
 		let mockModel, mockDeferred;
