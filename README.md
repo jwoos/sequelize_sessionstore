@@ -57,7 +57,7 @@ let app = express();
 
 let sessionConfig = {
 	// express session options here
-	store: SequelizeSessionStore({
+	store: new SequelizeSessionStore({
 		model: aSequelizeModel,
 		db: sequelize,
 		extras: (data) => {
